@@ -7,7 +7,8 @@ var RideSchema=new mongoose.Schema({
     time:String,
     seat:Number,
     charge:String,
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    bookingID:{ type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }
 });
 mongoose.model('Ride',RideSchema);
 

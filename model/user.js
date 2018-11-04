@@ -4,9 +4,9 @@ var UserSchema=new mongoose.Schema({
     name:String,
     email: String,
     password:String,
-    ride: { type: mongoose.Schema.Types.ObjectId, ref: 'Ride' }
+    ride: { type: mongoose.Schema.Types.ObjectId, ref: 'Ride' },
+    booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }
 });
-
 
 mongoose.model('User',UserSchema);
 

@@ -6,6 +6,8 @@ var db=require('./db');
 var UserController=require('./controller/userController');
 // ride controller
 var RideController=require('./controller/rideController');
+// booking controller
+var BookingController=require('./controller/bookingController');
 
 // https://enable-cors.org/server_expressjs.html
 app.use(function(req, res, next) {
@@ -19,5 +21,8 @@ app.use('/user',UserController);
 
 // ride
 app.use('/ride',RideController);
+
+// booking
+app.use('/book',BookingController);
 
 module.exports=app;
