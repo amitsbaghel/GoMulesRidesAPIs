@@ -1,9 +1,8 @@
 var mongoose= require('mongoose');
 
 var BookingSchema=new mongoose.Schema({
-    seat:String,
-    charge: String,
-    seat:String,
+    charge: Number,
+    seat:Number,
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     rideId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ride' }
 });
