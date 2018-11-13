@@ -77,6 +77,24 @@ router.get('/:rideid/:userid', function (req, res) {
         })
 }); // ends
 
+// cancel ride
+router.get('/cancel/:rideid/:userid', function (req, res) {
+    Ride.
+        findOneAndUpdate({ userId: req.params.userid, _id: req.params.rideid }, { status: 'cancelled' }, function (err, ride) {
+            if (err) {
+                return res.status(500).send("There was a problem adding the information to the database.");
+
+            }
+            res.redirect(url.format({
+                pathname: "/ride/",
+                query: {
+                    "userid": req.params.userid,
+                }
+            }))
+        })
+}); // ends
+
+
 
 // save ride starts
 router.post('/', function (req, res) {
