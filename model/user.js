@@ -5,8 +5,10 @@ var UserSchema=new mongoose.Schema({
     email: String,
     password:String,
     wallet:Number,
+    mobileNumber:Number,
     ride: { type: mongoose.Schema.Types.ObjectId, ref: 'Ride' },
-    booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }
+    booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
+    createdDate: { type: Date, default: new Date() }
 });
 
 mongoose.model('User',UserSchema);

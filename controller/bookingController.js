@@ -10,22 +10,11 @@ var Booking = require('../model/booking');
 var User = require('../model/user');
 var Ride =  require('../model/ride');
 
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey('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');
+
 // save ride starts
-router.post('/', async function (req, res) {
-
-    // var booking = new Booking({
-    //     userId: mongoose.Types.ObjectId(req.body.userID),
-    //     seat: req.body.seat,
-    //     charge:req.body.charge,
-    //     rideId: mongoose.Types.ObjectId(req.body.rideID)
-    // });
-
-    // booking.save(function (err, ride) {
-    //     if (err)
-    //         return res.status(500).send(err);
-
-    //     res.status(200).send(ride);
-    // });
+router.post('/', function (req, res) {
 
     var booking = new Booking({
         userId: mongoose.Types.ObjectId(req.body.userID),
@@ -43,24 +32,17 @@ router.post('/', async function (req, res) {
             if (err)
             return res.status(500).send(err);
 
-            // here will also push the booking entity to Ride parent.
-            // https://mongoosejs.com/docs/populate.html#refs-to-children
+            // here to add code to deposit that amount to ride poster.
+            // User.findByIdAndUpdate(req.body.userID, { $inc: { wallet: +parseInt(req.body.charge) } },function(err,user){
+            //     if (err)
+            //     return res.status(500).send(err);
+            // });
 
-        Ride.findOneAndUpdate(req.body.rideID, // User ID
-        { $push: { bookingID: booking } },{ new: true }, // child
-        function (err, rideData) {
-            if (err){
-                return res.status(500).send("There was a problem adding the information to the database.");
-            }
-            // res.status(200).send(rideData); 
             res.redirect(url.format({
-                pathname: "/ride/"//,
-                // query: {
-                //     "userid": req.params.userid,
-                // }
+                pathname: "/ride/"
             }))
-        }
-    );
+       // }
+    //);
         })
     });
 
@@ -91,22 +73,214 @@ router.post('/', async function (req, res) {
 
 }); // save booking ends
 
+// update ratings. //comment may thorugh error if user passed null comment.
+router.get('/:userid/:bookingId/:rating/:comment',function(req,res){
 
-
-//return a user from the database
-router.get('/:userid',function(req,res){
     Booking.
-    find({userId:req.params.userid}).sort({ '_id': -1 }).select('seat charge').
-    populate({path: 'rideId',select:"from to date time userId"}).
-    exec(function (err, bookings) {
-        if (err)
-        {
-            return res.status(500).send(err);
-            // return res.status(500).send("There was a problem adding the information to the database.");
+    findOneAndUpdate({ _id: req.params.bookingId}, { rating: req.params.rating, comment: req.params.comment}, function (err, ride) {
+        if (err) {
+            return res.status(500).send("There was a problem adding the information to the database.");
         }
-        
-            res.status(200).send(bookings);
+
+        res.redirect(url.format({
+            pathname: "/book/"+req.params.userid
+        }))
     })
+})
+
+// cancel booking by ride booking user
+router.get('/cancel/:userid/:bookingid',function(req,res){
+    console.log('here')
+
+    Booking.
+    findOneAndUpdate({ _id: req.params.bookingid}, { status: 'cancelled'}, function (err, ride) {
+        if (err) {
+            return res.status(500).send(err);
+        }
+
+        // reimburse amount to the ride booking person.
+        Booking.aggregate([
+            {
+                $match: {
+                    '_id': {
+                        $eq: mongoose.Types.ObjectId(req.params.bookingid),
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "userDetails"
+                }
+            },
+            { $unwind: '$userDetails' },
+            {
+                $lookup: {
+                    from: "rides",
+                    localField: "rideId",
+                    foreignField: "_id",
+                    as: "ridedetails"
+                }
+            },
+            { $unwind: '$ridedetails' },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "ridedetails.userId",
+                    foreignField: "_id",
+                    as: "ridePosterDetails"
+                }
+            },
+            { $unwind: '$ridePosterDetails' },
+            {
+                $project: {
+                    bookingAmount: '$charge',
+                    userId: '$userDetails._id',
+                    userWallet: '$userDetails.wallet',
+                    userEmail: '$userDetails.email',
+                    userName: '$userDetails.name',
+                    rideFrom:'$ridedetails.from',
+                    rideTo:'$ridedetails.to',
+                    rideDate:{ $dateToString: {
+                        date:'$ridedetails.date',
+                        format: '%m-%d-%Y' //%H-%M
+                    }},
+                    rideTime:'$ridedetails.time',
+                    ridePosterName:'$ridePosterDetails.name',
+                    ridePosterEmail:'$ridePosterDetails.email',
+                    ridePosterId:'$ridePosterDetails._id'
+                }
+            }
+
+        ]).exec(function (err, user) {
+            if (err) {
+                return res.status(500).send(err);
+            }
+            user=user[0]
+                // updating wallet of the ride booking user.
+                User.findOneAndUpdate({ _id: user.userId }, { $inc: { wallet: +parseInt(user.bookingAmount) } }, function (err, bookerdetails) {
+                    if (err) {
+                        return res.status(500).send(err);
+                    }
+                });
+
+                // deducting money from ride poster
+                User.findOneAndUpdate({ _id: user.ridePosterId }, { $inc: { wallet: -parseInt(user.bookingAmount) } }, function (err, posterdetails) {
+                    if (err) {
+                        return res.status(500).send(err);
+                    }
+                });
+                
+                // send an email to the ride poster updating that a booking has been cancelled and money has been reimbursed.
+                var textcontent= 'Hi ' + user.ridePosterName + '. A booking for ride from '+user.rideFrom +' to '+user.rideTo+' on '+user.rideDate;
+                textcontent+=' has been cancelled by '+user.userName+' and $ '+user.bookingAmount+' has been deducted from your account.';
+                textcontent+='You can contact him at '+user.userEmail;
+
+                var emailcontent = {
+                    from: 'noreply@gomulesrides.com',
+                    to: user.ridePosterEmail,
+                    subject: 'Booking cancelled :(',
+                    text: textcontent
+                };
+
+                // send mail with defined transport object
+                sgMail.send(emailcontent,false,function(err,response){
+                        if(err)
+                        return res.status(500).send(err);
+                        res.redirect(url.format({
+                            pathname: "/book/"+req.params.userid
+                        }))
+                });
+            
+        }); 
+    })
+})
+
+//return bookings on the basis of userId.
+router.get('/:userid',function(req,res){
+    Booking.aggregate([
+        {
+            $match: {
+                'userId': {
+                    $eq: mongoose.Types.ObjectId(req.params.userid),
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "rides",
+                localField: "rideId",
+                foreignField: "_id",
+                as: "rideDetails"
+            }
+        },
+        {$unwind: {path: '$rideDetails'}}, 
+        {
+            $project: {
+                _id:'$_id',
+                seat:'$seat',
+                charge:'$charge',
+                status:'$rideDetails.status',
+                from:'$rideDetails.from',
+                to:'$rideDetails.to',
+                date:'$rideDetails.date',
+                time:'$rideDetails.time',
+                ridePoster:'$rideDetails.userId',
+                rating: '$rating',
+                comment:'$comment',
+                rideid:'$rideDetails._id',
+                bookingStatus:'$status'
+            }
+        },
+         { $sort : { _id : -1} }
+    ]).exec(function (err, bookingDetails) {
+        if (err) {
+            return res.status(500).send(err);
+        }
+
+        res.status(200).send(bookingDetails);
+        });
+});
+
+//return bookings on the basis of rideId.
+router.get('/ride/:rideid',function(req,res){
+    Booking.aggregate([
+        {
+            $match: {
+                'rideId': {
+                    $eq: mongoose.Types.ObjectId(req.params.rideid),
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "userDetails"
+            }
+        },
+        {$unwind: {path: '$userDetails'}}, 
+        {
+            $project: {
+                _id:0,
+                seat:'$seat',
+                charge:'$charge',
+                // rating:'$rating',
+                bookedOn:'$createdDate',
+                bookedByname:'$userDetails.name',
+                bookedByemail:'$userDetails.email'
+            }
+        },
+         { $sort : { bookedOn : -1} }
+    ]).exec(function (err, bookingDetails) {
+        if (err) {
+            return res.status(500).send(err);
+        }
+        res.status(200).send(bookingDetails);
+        });
 });
 
 module.exports = router;
