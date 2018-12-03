@@ -141,7 +141,8 @@ router.get('/ride/cancel/:rideid/:userid', function (req, res) {
                         }},
                         rideTime:'$ridedetails.time',
                         ridePosterName:'$ridePosterDetails.name',
-                        ridePosterEmail:'$ridePosterDetails.email'
+                        ridePosterEmail:'$ridePosterDetails.email',
+                        ridePosterId:'$ridePosterDetails._id',
                     }
                 }
 
@@ -163,8 +164,12 @@ router.get('/ride/cancel/:rideid/:userid', function (req, res) {
                     });
 
                     // here ride poster wallet will be deducted.
+                    User.findOneAndUpdate({ _id: user.ridePosterId}, { $inc: { wallet: -parseInt(user.bookingAmount) } }, function (err, userUpdated) {
+                        if (err) {
+                            return res.status(500).send(err);
+                        }
+                    });
 
-                    
                     // send an email to this user updating that ride has been cancelled and money has been reimbursed.
                     var textcontent= 'Hi ' + user.userName + '. Your ride from '+user.rideFrom+' to '+user.rideTo+' on '+user.rideDate+' has been cancelled by '+user.ridePosterName+' and $'+ user.bookingAmount+' has been reimbursed to your account.';
                     textcontent+='You can contact the ride poster at '+user.ridePosterEmail;
@@ -176,13 +181,13 @@ router.get('/ride/cancel/:rideid/:userid', function (req, res) {
                         text: textcontent
                     };
 
-                    // send mail with defined transport object
+                    // send mail to the ride booking user
                     sgMail.send(emailcontent,false,function(err,response){
                             if(err)
                             console.log('error from email',err)
-
                     });
                 });
+
                 res.redirect(url.format({
                     pathname: "/ride/"+req.params.userid
                 }))

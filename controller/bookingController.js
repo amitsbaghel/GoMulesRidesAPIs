@@ -13,7 +13,7 @@ var Ride =  require('../model/ride');
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey('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');
 
-// save ride starts
+// book a ride starts
 router.post('/', function (req, res) {
 
     var booking = new Booking({
@@ -33,16 +33,18 @@ router.post('/', function (req, res) {
             return res.status(500).send(err);
 
             // here to add code to deposit that amount to ride poster.
-            // User.findByIdAndUpdate(req.body.userID, { $inc: { wallet: +parseInt(req.body.charge) } },function(err,user){
-            //     if (err)
-            //     return res.status(500).send(err);
-            // });
-
-            res.redirect(url.format({
-                pathname: "/ride/"
-            }))
-       // }
-    //);
+            Ride.findById(req.body.rideID,"userId",function(err,user){
+                if (err)
+                    return res.status(500).send(err);
+                User.findByIdAndUpdate(user.userId, { $inc: { wallet: +parseInt(req.body.charge) } },function(err,user){
+                 if (err)
+                    return res.status(500).send(err);
+                    console.log('user',user)
+                    res.redirect(url.format({
+                        pathname: "/ride/"
+                    }))
+                });
+            })
         })
     });
 
