@@ -271,6 +271,7 @@ router.get('/ride/:rideid',function(req,res){
                 seat:'$seat',
                 charge:'$charge',
                 // rating:'$rating',
+                status:'$status',
                 bookedOn:'$createdDate',
                 bookedByname:'$userDetails.name',
                 bookedByemail:'$userDetails.email'

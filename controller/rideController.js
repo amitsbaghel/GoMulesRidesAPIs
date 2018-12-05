@@ -229,12 +229,12 @@ function _getridedetails(userid,status,rideid,from,to) {
     queryParams.from={$eq:from}
     if(to!='undefined' && to!=null)
     queryParams.to={$eq:to}
-    if(status!=null && status[0]=='incomplete')
-    queryParams.date={$gte:new Date()}
+    // if(status!=null && status[0]=='incomplete')
+    // queryParams.date={$gte:new Date()}
     //new Date('2018-12-22T05:00:00.000Z') for testing purpose.
     // compare only date part and for time compare only time part.
 
-    console.log('queryParams',queryParams);
+    // console.log('queryParams',queryParams);
 
     return Ride.aggregate([ // left
         { $match: queryParams },
