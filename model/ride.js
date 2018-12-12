@@ -4,7 +4,7 @@ var RideSchema=new mongoose.Schema({
     from:String,
     to: String, 
     date:Date,
-    time:String,
+    time:Date, // change it to string if any error.
     seat:Number,
     charge:String,
     status:{ type: String, default: 'incomplete' },

@@ -274,7 +274,8 @@ router.get('/ride/:rideid',function(req,res){
                 status:'$status',
                 bookedOn:'$createdDate',
                 bookedByname:'$userDetails.name',
-                bookedByemail:'$userDetails.email'
+                bookedByemail:'$userDetails.email',
+                bookedByUserId:'$userDetails._id'
             }
         },
          { $sort : { bookedOn : -1} }

@@ -46,7 +46,7 @@ router.get('/fetch/ride/by/id/:rideid', function (req, res) {
 
 
 router.get('/filter/rides/by/cities/:cityfrom/:cityto', function (req, res) {
-    console.log(req.params)
+    // console.log(req.params)
     _getridedetails(null,['incomplete'],null,req.params.cityfrom,req.params.cityto).exec(function (err, values) {
         if (err)
             return res.status(500).send(err);
@@ -56,7 +56,7 @@ router.get('/filter/rides/by/cities/:cityfrom/:cityto', function (req, res) {
 
 // update ride status // complete the ride
 router.get('/:rideid/:userid', function (req, res) {
-    console.log('/:rideid/:userid')
+    // console.log('/:rideid/:userid')
     Ride.
         findOneAndUpdate({ userId: req.params.userid, _id: req.params.rideid }, { status: 'complete' }, function (err, ride) {
             if (err) {
@@ -197,7 +197,7 @@ router.get('/ride/cancel/:rideid/:userid', function (req, res) {
 
 // save ride starts
 router.post('/', function (req, res) {
-    console.log('/');
+    // console.log('/');
     // { $push: { ride: rideData } },{ new: true }, // child
     var ride = new Ride({
         from: req.body.from,
@@ -217,6 +217,10 @@ router.post('/', function (req, res) {
 
 }); // save ride ends
 
+function pad(value){
+    return value<10?'0'+value:value;
+}
+
 function _getridedetails(userid,status,rideid,from,to) {
     let queryParams = {}
     if(userid)
@@ -229,12 +233,18 @@ function _getridedetails(userid,status,rideid,from,to) {
     queryParams.from={$eq:from}
     if(to!='undefined' && to!=null)
     queryParams.to={$eq:to}
-    // if(status!=null && status[0]=='incomplete')
-    // queryParams.date={$gte:new Date()}
+
+    //   var newDate=new Date();
+    //   var year=newDate.getFullYear();
+    //   var month=newDate.getMonth()+1;
+    //   var day=newDate.getDate();
+    //   var currentDateNoTime=new Date(year+"-"+pad(month)+"-"+pad(day)+"T"+pad(0)+":"+pad(0))
+
+     if(status!=null && status[0]=='incomplete') // for all rides great than or equal to todays date/time.
+         queryParams.time={$gte:new Date()}
+
     //new Date('2018-12-22T05:00:00.000Z') for testing purpose.
     // compare only date part and for time compare only time part.
-
-    // console.log('queryParams',queryParams);
 
     return Ride.aggregate([ // left
         { $match: queryParams },
@@ -350,7 +360,7 @@ function _getridedetailswithAvg(userid,status,rideid) {
     if(rideid)
     queryParams._id={$eq:mongoose.Types.ObjectId(rideid)}
 
-    console.log('_getridedetailswithAvg',queryParams)
+    // console.log('_getridedetailswithAvg',queryParams)
 
     return Ride.aggregate([ // left
         { $match: queryParams },
@@ -467,6 +477,5 @@ function _getridedetailswithAvg(userid,status,rideid) {
         }
     ])
 }
-
 
 module.exports = router;
