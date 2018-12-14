@@ -243,9 +243,6 @@ function _getridedetails(userid,status,rideid,from,to) {
      if(status!=null && status[0]=='incomplete') // for all rides great than or equal to todays date/time.
          queryParams.time={$gte:new Date()}
 
-    //new Date('2018-12-22T05:00:00.000Z') for testing purpose.
-    // compare only date part and for time compare only time part.
-
     return Ride.aggregate([ // left
         { $match: queryParams },
         {
