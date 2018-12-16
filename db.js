@@ -1,2 +1,2 @@
 var mongoose=require('mongoose');
-mongoose.connect('mongodb://root:password1@ds123603.mlab.com:23603/gomules_ride',{ useNewUrlParser: true });
+mongoose.connect('mLab_database_connection_string_here',{ useNewUrlParser: true });
