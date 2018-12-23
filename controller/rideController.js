@@ -72,7 +72,6 @@ router.get('/:rideid/:userid', function (req, res) {
 
 // get all the rides, comments and ratings from the ride poster.
 router.get('/details/comments/:userid', function (req, res) {
-    // console.log('/details/comments/:userid');
     _getridedetailswithAvg(req.params.userid,['complete',"cancelled",'incomplete'],null).exec(function (err, values) {
         if (err)
             return res.status(500).send(err);
@@ -137,7 +136,7 @@ router.get('/ride/cancel/:rideid/:userid', function (req, res) {
                         rideTo:'$ridedetails.to',
                         rideDate:{ $dateToString: {
                             date:'$ridedetails.date',
-                            format: '%m-%d-%Y' //%H-%M
+                            format: '%m-%d-%Y'
                         }},
                         rideTime:'$ridedetails.time',
                         ridePosterName:'$ridePosterDetails.name',
@@ -155,7 +154,6 @@ router.get('/ride/cancel/:rideid/:userid', function (req, res) {
                 // 3. update user wallets who booked the ride.
                 userDetails.forEach(user => {
 
-                    // console.log('user.userWallet',user.userWallet);
                     // updating wallet of the users// giving back the money.
                     User.findOneAndUpdate({ _id: user.userId }, { $inc: { wallet: +parseInt(user.bookingAmount) } }, function (err, userUpdated) {
                         if (err) {
@@ -197,8 +195,6 @@ router.get('/ride/cancel/:rideid/:userid', function (req, res) {
 
 // save ride starts
 router.post('/', function (req, res) {
-    // console.log('/');
-    // { $push: { ride: rideData } },{ new: true }, // child
     var ride = new Ride({
         from: req.body.from,
         to: req.body.to,
@@ -233,12 +229,6 @@ function _getridedetails(userid,status,rideid,from,to) {
     queryParams.from={$eq:from}
     if(to!='undefined' && to!=null)
     queryParams.to={$eq:to}
-
-    //   var newDate=new Date();
-    //   var year=newDate.getFullYear();
-    //   var month=newDate.getMonth()+1;
-    //   var day=newDate.getDate();
-    //   var currentDateNoTime=new Date(year+"-"+pad(month)+"-"+pad(day)+"T"+pad(0)+":"+pad(0))
 
      if(status!=null && status[0]=='incomplete') // for all rides great than or equal to todays date/time.
          queryParams.time={$gte:new Date()}
@@ -356,8 +346,6 @@ function _getridedetailswithAvg(userid,status,rideid) {
     queryParams.status={$in: status}
     if(rideid)
     queryParams._id={$eq:mongoose.Types.ObjectId(rideid)}
-
-    // console.log('_getridedetailswithAvg',queryParams)
 
     return Ride.aggregate([ // left
         { $match: queryParams },

@@ -11,7 +11,7 @@ var User = require('../model/user');
 var Ride =  require('../model/ride');
 
 const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey('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');
+sgMail.setApiKey('<here your API from SendGrid>');
 
 // book a ride starts
 router.post('/', function (req, res) {
@@ -147,7 +147,7 @@ router.get('/cancel/:userid/:bookingid',function(req,res){
                     rideTo:'$ridedetails.to',
                     rideDate:{ $dateToString: {
                         date:'$ridedetails.date',
-                        format: '%m-%d-%Y' //%H-%M
+                        format: '%m-%d-%Y'
                     }},
                     rideTime:'$ridedetails.time',
                     ridePosterName:'$ridePosterDetails.name',
@@ -207,8 +207,6 @@ router.get('/no/show/up/bybooker/:rideid/:bookingid',function(req,res){
         if (err) {
             return res.status(500).send(err);
         }
-        // res.status(200).send(booking);
-        // redirect here to booking details.
         res.redirect(url.format({
             pathname: "/book/ride/not/cancelled/complete/"+req.params.rideid
         }))
@@ -282,11 +280,9 @@ router.get('/ride/:rideid',function(req,res){
         {$unwind: {path: '$userDetails'}}, 
         {
             $project: {
-                // _id:0,
                 _id:1,
                 seat:'$seat',
                 charge:'$charge',
-                // rating:'$rating',
                 status:'$status',
                 bookedOn:'$createdDate',
                 bookedByname:'$userDetails.name',
@@ -329,7 +325,6 @@ router.get('/ride/not/cancelled/complete/:rideid',function(req,res){
                 _id:1,
                 seat:'$seat',
                 charge:'$charge',
-                // rating:'$rating',
                 status:'$status',
                 bookedOn:'$createdDate',
                 bookedByname:'$userDetails.name',

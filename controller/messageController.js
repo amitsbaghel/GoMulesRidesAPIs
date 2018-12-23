@@ -22,8 +22,6 @@ router.post('/', function (req, res) {
         sentToId:mongoose.Types.ObjectId(req.body.to)
     });
 
-    console.log('server',msg)
-
     msg.save(function (err, message) {
         if (err)
             return res.status(500).send(err);
@@ -114,17 +112,12 @@ router.get('/:fromUserId/:toUserId', function (req, res) {
         if (err) {
             return res.status(500).send(err) ;
         }
-        // console.log('userData 1',req.params.toUserId)
-        
         // if ToUserId has been sent then find it in the
         if(req.params.toUserId!='null') // check null or what.
         {
         var userData= usermessages.find(x => x.sentById==req.params.toUserId || x.sentToId==req.params.toUserId  );
-        // console.log('userData 2 ',userData)
         if(!userData) // if not exists add to the existing array.
         {
-            // console.log('not found')
-
             User.findById(req.params.toUserId,"name",function(err,user){
                 if (err)
                     return res.status(500).send(err);
@@ -144,8 +137,6 @@ router.get('/:fromUserId/:toUserId', function (req, res) {
         res.status(200).send(usermessages);
     } // if not null the to param.
     else{ //send response as it is.
-        // response should be sorted first.
-        // console.log('else part')
         res.status(200).send(usermessages);
     }
     } // closes exec function.
@@ -158,7 +149,6 @@ router.get('/messages/:fromUserId/:toUserId', function (req, res) {
     var sentTo=mongoose.Types.ObjectId(req.params.toUserId);
 
     Message.find(
-        // {}
         { $query: 
             { $or: [ // either sentToID and sentFromId OR sentFromId and sentToID 
                 { $and: [ { sentById: { $eq: sentBy } }, { sentToId: { $eq: sentTo } } ] },  
@@ -183,8 +173,6 @@ io.on('connection', (socket) => {
 
     socket.on('add-message', (message) => {
         io.emit('message', { type: 'new-message', text: message });
-        // Function above that stores the message in the database
-        // databaseStore(message)
     });
 
 });
