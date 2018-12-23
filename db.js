@@ -1,2 +1,2 @@
 var mongoose=require('mongoose');
-mongoose.connect('<YOUR_MONGODB_STRING>',{ useNewUrlParser: true });
+mongoose.connect('mLab_database_connection_string_here',{ useNewUrlParser: true });
