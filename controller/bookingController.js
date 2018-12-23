@@ -200,6 +200,21 @@ router.get('/cancel/:userid/:bookingid',function(req,res){
     })
 })
 
+// mark booking by ride booking user as no show up.
+router.get('/no/show/up/bybooker/:rideid/:bookingid',function(req,res){
+    Booking.
+    findOneAndUpdate({ _id: req.params.bookingid}, { status: 'noshowup'}, function (err, booking) {
+        if (err) {
+            return res.status(500).send(err);
+        }
+        // res.status(200).send(booking);
+        // redirect here to booking details.
+        res.redirect(url.format({
+            pathname: "/book/ride/not/cancelled/complete/"+req.params.rideid
+        }))
+    })
+})
+
 //return bookings on the basis of userId.
 router.get('/:userid',function(req,res){
     Booking.aggregate([
@@ -253,7 +268,7 @@ router.get('/ride/:rideid',function(req,res){
             $match: {
                 'rideId': {
                     $eq: mongoose.Types.ObjectId(req.params.rideid),
-                }
+                },
             }
         },
         {
@@ -267,7 +282,8 @@ router.get('/ride/:rideid',function(req,res){
         {$unwind: {path: '$userDetails'}}, 
         {
             $project: {
-                _id:0,
+                // _id:0,
+                _id:1,
                 seat:'$seat',
                 charge:'$charge',
                 // rating:'$rating',
@@ -286,5 +302,50 @@ router.get('/ride/:rideid',function(req,res){
         res.status(200).send(bookingDetails);
         });
 });
+
+//return bookings on the basis of rideId except cancelled rides.
+router.get('/ride/not/cancelled/complete/:rideid',function(req,res){
+    Booking.aggregate([
+        {
+            $match: {
+                'rideId': {
+                    $eq: mongoose.Types.ObjectId(req.params.rideid)
+                },
+                 'status':
+                 { $in: ['active','noshowup'] } // not to show noshowup and cancelled
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "_id",
+                as: "userDetails"
+            }
+        },
+        {$unwind: {path: '$userDetails'}}, 
+        {
+            $project: {
+                _id:1,
+                seat:'$seat',
+                charge:'$charge',
+                // rating:'$rating',
+                status:'$status',
+                bookedOn:'$createdDate',
+                bookedByname:'$userDetails.name',
+                bookedByemail:'$userDetails.email',
+                bookedByUserId:'$userDetails._id'
+            }
+        },
+         { $sort : { bookedOn : -1} }
+    ]).exec(function (err, bookingDetails) {
+        if (err) {
+            return res.status(500).send(err);
+        }
+        res.status(200).send(bookingDetails);
+        });
+});
+
+
 
 module.exports = router;
